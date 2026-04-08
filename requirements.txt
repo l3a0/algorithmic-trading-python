@@ -4,6 +4,6 @@ jupyter-console==6.1.0
 jupyter-core==4.11.2
 numpy==1.22.0
 pandas==0.25.3
-requests==2.22.0
+requests==2.33.0
 scipy==1.5.2
 XlsxWriter==1.2.2
