@@ -16,7 +16,7 @@
 **Types of algorithmic trading (from simple to complex):**
 
 | Type | What it does | Example |
-|------|-------------|---------|
+| ---- | ------------ | ------- |
 | Rule-based execution | Automates manual decisions | "Buy 100 shares of AAPL if price < $150" |
 | Quantitative screening | Ranks stocks by metrics | This course's approach |
 | Statistical arbitrage | Exploits price relationships | Pairs trading (Coca-Cola vs. Pepsi) |
@@ -33,7 +33,7 @@
 
 **Anatomy of a stock API call:**
 
-```
+```text
 REQUEST:  GET https://api.example.com/stock/AAPL/quote?token=YOUR_KEY
 RESPONSE: {
     "symbol": "AAPL",
@@ -46,6 +46,7 @@ RESPONSE: {
 ```
 
 **Key Python pattern:**
+
 ```python
 import requests
 
@@ -60,7 +61,7 @@ price = data["latestPrice"]  # 178.52
 **Critical note (2026):** The course uses IEX Cloud, which shut down August 31, 2024. You need an alternative:
 
 | Alternative | Free tier | Best for |
-|------------|-----------|----------|
+| ------------ | --------- | -------- |
 | **Alpha Vantage** | 25 calls/day | Direct IEX migration (has migration guide) |
 | **Finnhub** | 60 calls/min | Real-time quotes |
 | **Financial Modeling Prep** | Limited | Deep fundamentals (P/E, P/B, etc.) |
@@ -70,11 +71,13 @@ price = data["latestPrice"]  # 178.52
 ### 1.3 Environment Setup
 
 **Required libraries:**
+
 ```bash
 pip install pandas numpy requests xlsxwriter scipy
 ```
 
 **What each does:**
+
 - `pandas` — DataFrames (your tabular data structure for all 3 projects)
 - `numpy` — Numerical operations, NaN handling
 - `requests` — HTTP API calls
@@ -82,7 +85,8 @@ pip install pandas numpy requests xlsxwriter scipy
 - `scipy` — `percentileofscore()` for ranking stocks
 
 **Project structure:**
-```
+
+```text
 algorithmic-trading-python/
   starter_files/        # Templates with TODOs
   finished_files/       # Completed solutions
@@ -97,12 +101,14 @@ algorithmic-trading-python/
 ### 2.1 The Concept: Equal-Weight vs. Market-Cap Weight
 
 **Market-cap weighted (how most index funds work):**
+
 - Each stock's weight = its market cap / total market cap of all stocks
 - Apple (~$3T) gets ~7% of the index; a small company gets <0.1%
 - Dominated by "Magnificent Seven" (Apple, Microsoft, Nvidia, Amazon, Alphabet, Meta, Tesla)
 - As of late 2024, top 10 stocks = 35% of the entire S&P 500
 
 **Equal-weight (what you're building):**
+
 - Each stock's weight = 1/500 = 0.2%
 - Apple gets the same weight as the smallest S&P 500 company
 - Must rebalance quarterly (prices drift, weights shift)
@@ -110,7 +116,7 @@ algorithmic-trading-python/
 **Historical performance comparison:**
 
 | Metric | Market-cap weighted | Equal-weight |
-|--------|-------------------|--------------|
+| -------- | ------------------- | -------------- |
 | Avg annual return (1990–2023) | ~10.5% | ~11.1% |
 | Volatility | Lower | ~20-30% higher |
 | Turnover | ~10-15%/year | ~50-150%/year |
@@ -127,7 +133,7 @@ algorithmic-trading-python/
 
 This is the template for ALL three projects:
 
-```
+```text
 Step 1: Load stock list (sp_500_stocks.csv)
 Step 2: Pull data from API (batch calls)
 Step 3: Store in pandas DataFrame
@@ -136,6 +142,7 @@ Step 5: Output to formatted Excel
 ```
 
 **Step 1 — Load tickers:**
+
 ```python
 import pandas as pd
 
@@ -167,6 +174,7 @@ for group in symbol_groups:
 **Why this matters beyond this course:** Chunking + batch is a universal data engineering pattern. Any time you need to process N items through a rate-limited service, you chunk them.
 
 **Step 3 — Build the DataFrame:**
+
 ```python
 columns = ['Ticker', 'Stock Price', 'Market Capitalization', 'Number of Shares to Buy']
 df = pd.DataFrame(columns=columns)
@@ -184,6 +192,7 @@ for symbol in data:
 ```
 
 *Note:* `df.append()` is deprecated in newer pandas. Use `pd.concat()` instead:
+
 ```python
 new_row = pd.DataFrame([{
     'Ticker': symbol,
@@ -195,6 +204,7 @@ df = pd.concat([df, new_row], ignore_index=True)
 ```
 
 **Step 4 — Calculate position sizes:**
+
 ```python
 portfolio_size = float(input("Enter your portfolio value: "))  # e.g., 1000000
 position_size = portfolio_size / len(df)  # Equal weight = total / number of stocks
@@ -210,6 +220,7 @@ for i in range(len(df)):
 Using `floor()` because you can't buy fractional shares in this model (though many brokers now support fractional shares).
 
 **Step 5 — Excel output with xlsxwriter:**
+
 ```python
 writer = pd.ExcelWriter('recommended_trades.xlsx', engine='xlsxwriter')
 df.to_excel(writer, sheet_name='Recommended Trades', index=False)
@@ -258,6 +269,7 @@ writer.save()
 **Core idea:** Stocks that have gone up recently tend to keep going up. Stocks that have gone down tend to keep going down. Buy the winners.
 
 **Academic foundation — Jegadeesh & Titman (1993):**
+
 - Tested all combinations of 3, 6, 9, and 12-month formation periods
 - Found that buying past winners and shorting past losers generated ~1.5% monthly excess returns
 - Works across virtually all developed and emerging markets
@@ -265,6 +277,7 @@ writer.save()
 - [Original paper (PDF)](https://www.bauer.uh.edu/rsusmel/phd/jegadeesh-titman93.pdf)
 
 **Why does momentum work? Three leading explanations:**
+
 1. **Behavioral:** Investors underreact to good news initially, then herd into winning stocks (overreaction), creating a trend
 2. **Risk-based:** Momentum stocks are riskier (they crash hard in reversals), so the higher return is compensation for risk
 3. **Information diffusion:** Good news spreads slowly, especially for smaller or less-covered companies
@@ -280,7 +293,7 @@ writer.save()
 **High-Quality Momentum (HQM):** Rank stocks by *consistency* of momentum across multiple time windows.
 
 | Time window | What it captures |
-|-------------|-----------------|
+| ------------- | ----------------- |
 | 1-month return | Very recent trend |
 | 3-month return | Short-term trend |
 | 6-month return | Medium-term trend |
@@ -293,11 +306,13 @@ A stock ranked 90th percentile in ALL four windows has *consistent, high-quality
 ### 3.3 Percentile Scoring — The Core Algorithm
 
 **Why percentiles instead of raw returns?**
+
 - Raw returns aren't comparable across time windows (a 5% monthly return is great; a 5% annual return is terrible)
 - Percentiles normalize everything to 0–100
 - Makes combining metrics trivial (just average the percentiles)
 
 **How `scipy.stats.percentileofscore()` works:**
+
 ```python
 from scipy.stats import percentileofscore
 
@@ -307,6 +322,7 @@ percentileofscore(all_returns, 12)
 ```
 
 **Building the HQM score:**
+
 ```python
 from scipy.stats import percentileofscore as score
 
@@ -333,6 +349,7 @@ for row in df.index:
 ```
 
 **Select top 50 by HQM score:**
+
 ```python
 df.sort_values('HQM Score', ascending=False, inplace=True)
 df = df[:50]
@@ -344,7 +361,7 @@ df.reset_index(drop=True, inplace=True)
 Momentum strategies can crash *hard* during market reversals:
 
 | Event | Momentum drawdown |
-|-------|------------------|
+| ------- | ------------------ |
 | 2001-2002 (dot-com bust) | ~28% |
 | 2009 (financial crisis recovery) | ~54% |
 | 2020 (COVID recovery) | Significant (value snapped back) |
@@ -352,6 +369,7 @@ Momentum strategies can crash *hard* during market reversals:
 **Why crashes happen:** When the market reverses sharply, yesterday's losers become today's winners, and yesterday's winners fall. Momentum is *long* the winners and *short* the losers — exactly the wrong position.
 
 **Mitigations (not covered in the course, but crucial):**
+
 - **Volatility scaling:** Reduce momentum exposure when market volatility is high
 - **Combine with value:** Value and momentum crash at different times
 - **Liquidity filter:** Avoid illiquid small-caps that amplify crashes
@@ -376,6 +394,7 @@ Momentum strategies can crash *hard* during market reversals:
 **The analogy:** Imagine a house appraised at $500K that's listed for $300K because the owners need to sell quickly. A value investor would say: "The fundamentals (location, square footage, condition) are worth $500K. The current price is a temporary discount. I'll buy."
 
 **Academic foundation — Fama & French (1993):**
+
 - Discovered that stocks with high book-to-market ratios (value stocks) outperform stocks with low book-to-market ratios (growth stocks)
 - This "value premium" has been ~4-5% annually over decades
 - Led to the famous three-factor model (market risk + size + value)
@@ -383,42 +402,50 @@ Momentum strategies can crash *hard* during market reversals:
 
 ### 4.2 The Five Value Metrics
 
-**1. P/E Ratio (Price to Earnings)**
-```
+#### 1. P/E Ratio (Price to Earnings)
+
+```text
 P/E = Stock Price / Earnings Per Share
 ```
+
 - Measures: How much you pay per dollar of profit
 - Low P/E = "cheap" relative to earnings
 - Example: Stock at $50 earning $5/share → P/E = 10
 - **Limitation:** Meaningless for unprofitable companies (negative earnings). Cyclical companies may appear cheap at peak earnings.
 - **Best for:** Stable, profitable companies
 
-**2. P/B Ratio (Price to Book Value)**
-```
+#### 2. P/B Ratio (Price to Book Value)
+
+```text
 P/B = Market Cap / (Total Assets - Total Liabilities)
 ```
+
 - Measures: How much you pay relative to the company's net asset value
 - Low P/B = stock trades near or below liquidation value
 - P/B < 1 means the market values the company at less than its assets
 - **Limitation:** Less meaningful for asset-light tech companies (most value is in IP, not physical assets)
 - **Best for:** Banks, manufacturing, real estate
 
-**3. P/S Ratio (Price to Sales)**
-```
+#### 3. P/S Ratio (Price to Sales)
+
+```text
 P/S = Market Cap / Annual Revenue
 ```
+
 - Measures: How much you pay per dollar of revenue
 - Works even for unprofitable companies (everyone has revenue)
 - More stable than P/E (revenue is harder to manipulate than earnings)
 - **Limitation:** Ignores whether the company is actually profitable
 - **Best for:** High-growth or unprofitable companies where P/E doesn't work
 
-**4. EV/EBITDA (Enterprise Value to EBITDA)**
-```
+#### 4. EV/EBITDA (Enterprise Value to EBITDA)
+
+```text
 EV = Market Cap + Total Debt - Cash
 EBITDA = Earnings Before Interest, Taxes, Depreciation, Amortization
 EV/EBITDA = EV / EBITDA
 ```
+
 - Measures: Total company valuation relative to operating cash generation
 - **Why EV instead of market cap?** EV accounts for debt. A company with $100M market cap and $900M debt is effectively a $1B acquisition — EV captures that.
 - **Why EBITDA instead of earnings?** Removes the effect of capital structure (debt vs. equity) and accounting choices (depreciation methods).
@@ -426,11 +453,13 @@ EV/EBITDA = EV / EBITDA
 - Typical benchmark: EV/EBITDA of ~6x is considered conservative value
 - **Limitation:** Can be misleading for capital-intensive businesses where depreciation is a real cost
 
-**5. EV/GP (Enterprise Value to Gross Profit)**
-```
+#### 5. EV/GP (Enterprise Value to Gross Profit)
+
+```text
 Gross Profit = Revenue - Cost of Goods Sold
 EV/GP = EV / Gross Profit
 ```
+
 - Measures: Valuation relative to production efficiency
 - More conservative than EV/EBITDA (gross profit is higher up the income statement)
 - Captures the company's core economic engine before operating expenses
@@ -445,7 +474,7 @@ The "Value Composite Two" (VC2) — averaging percentile ranks across multiple v
 **Why no single metric is enough:**
 
 | Metric | Fails when... |
-|--------|-------------|
+| -------- | ------------- |
 | P/E | Earnings are negative, cyclical, or manipulated |
 | P/B | Company is asset-light (tech, services) |
 | P/S | Company has revenue but burns cash |
@@ -485,11 +514,13 @@ df = df[:50]
 ### 4.5 Handling NaN Values — The Real-World Challenge
 
 Financial data is messy. Companies may have:
+
 - Negative earnings (P/E is meaningless)
 - No EBITDA reported
 - Missing book value data
 
 **The course's approach:**
+
 ```python
 # Replace NaN with the column mean (simple imputation)
 for column in ['P/E Ratio', 'P/B Ratio', 'P/S Ratio', 'EV/EBITDA', 'EV/GP']:
@@ -499,6 +530,7 @@ for column in ['P/E Ratio', 'P/B Ratio', 'P/S Ratio', 'EV/EBITDA', 'EV/GP']:
 **Why this works for screening:** You're ranking 500 stocks. Imputing the mean for missing values puts those stocks in the middle of the pack — they won't be selected as top value picks or excluded entirely. It's a reasonable default.
 
 **Better approaches (not in the course):**
+
 - **Exclude stocks with >2 missing metrics** — if most of their data is missing, the composite score is unreliable
 - **Use `pd.Series.rank(pct=True, na_option='keep')`** — rank within available data, keep NaN as NaN
 - **Winsorize outliers** — cap extreme values at the 1st/99th percentile before ranking
@@ -506,7 +538,7 @@ for column in ['P/E Ratio', 'P/B Ratio', 'P/S Ratio', 'EV/EBITDA', 'EV/GP']:
 ### 4.6 Value vs. Momentum — The Philosophical Tension
 
 | | Momentum | Value |
-|---|---------|-------|
+| --- | --------- | ------- |
 | Philosophy | "Buy winners" | "Buy losers (that are underpriced)" |
 | Behavioral basis | Herding, underreaction | Overreaction, panic selling |
 | Works because | Trends persist | Mean reversion |
@@ -576,7 +608,7 @@ writer.save()
 ### 5.2 Key Python Gotchas
 
 | Issue | Problem | Solution |
-|-------|---------|----------|
+| ------- | --------- | ---------- |
 | `df.append()` deprecated | Removed in pandas 2.0 | Use `pd.concat([df, new_row])` |
 | `percentileofscore` with NaN | Raises error or wrong result | Filter NaN before calling |
 | `writer.save()` deprecated | Use context manager | `with pd.ExcelWriter(...) as writer:` |
