@@ -1,6 +1,12 @@
 # Algorithmic Trading in Python
 
-This repository
+This repository accompanies the [Algorithmic Trading Using Python](https://www.youtube.com/watch?v=xfzGZB4HhEE) course on freeCodeCamp.
+
+## Study Materials
+
+* [Detailed Course Notes](notes/algo-trading-detailed-notes.md) — comprehensive notes covering all sections with code examples and analysis
+* [Accelerated Study Plan](notes/algo-trading-python-study-plan.md) — structured 4-day study schedule with spaced repetition
+* [Flashcards App](notes/algo-trading-flashcards-app.html) — interactive self-testing for key concepts
 
 ## Course Outline
 
